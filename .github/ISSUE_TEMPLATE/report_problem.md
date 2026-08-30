@@ -1,22 +1,18 @@
 ---
-# NOTE: this file is managed by terraform
+# NOTE: Terraform-managed template
 
 name: 🐛 Report a bug
 about: Report a bug
-title: 'Bug: '
+title: "Bug: "
 labels: bug
-assignees: ''
+assignees: ""
 type: Bug
-
 ---
 
 **Summary of the bug**
 
-
 **Steps to Reproduce**
 
-
 **Additional context**
-
 
 **Screenshot**

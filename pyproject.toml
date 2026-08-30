@@ -1,19 +1,16 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-
-requires = [ "setuptools", "wheel" ]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
 
 [project]
 name = "delete-branches"
-version = "1.2.15"
-
+version = "1.2.16"
 readme = "README.md"
 license-files = [ "LICENSE" ]
 authors = [
   { name = "developers", email = "developers@tagdots.com" },
 ]
 requires-python = ">=3.12.10"
-
 classifiers = [
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3 :: Only",
@@ -22,72 +19,115 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Topic :: Software Development :: Build Tools",
 ]
-
 dependencies = [
-  "click==8.3.1",
-  "pygithub==2.8.1",
+  "click~=8.4.2",
+  "pygithub>=2.9.1,<2.11.0",
 ]
-
-optional-dependencies.local = [
-  "commitizen",
-  "pre-commit",
-]
-
-optional-dependencies.test = [
-  "build",
-  "coverage",
-  "flake8",
-  "isort",
-  "pyscan-rs",
-  "pytest",
-  "twine",
-]
-
 urls.Changelog = "https://github.com/tagdots/delete-branches/blob/main/CHANGELOG.md"
 urls.Documentation = "https://github.com/tagdots/delete-branches/blob/main/README.md"
 urls.Homepage = "https://github.com/tagdots"
 urls.Issues = "https://github.com/tagdots/delete-branches/issues"
 urls.Repository = "https://github.com/tagdots/delete-branches"
-
-scripts.delete-branches = "delete_branches.run:main"
+scripts.delete-branches = "delete_branches.cli:main"
 
 [dependency-groups]
+dev = [
+  "commitizen",
+  "pre-commit",
+]
 test = [
-  "coverage[toml]",
+  "coverage",
+  "pytest",
+]
+security = [
+  "bandit",
+  "pysentry-rs",
 ]
 
-[tool.setuptools.packages.find]
-where = [ "src" ]
+[tool.hatch]
+version.path = "src/delete_branches/__init__.py"
+metadata.directory = "src"
+build.targets.wheel.packages = [ "src/delete_branches" ]
 
-[tool.setuptools.dynamic]
-version = { attr = "src.delete_branches.__init__" }
+[tool.uv]
+default-groups = [ "dev", "test" ]
+
+[tool.black]
+line-length = 125
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 4
+combine_as_imports = true
+float_to_top = true
+skip = [ "__init__.py" ]
+
+[tool.flake8]
+max-line-length = 125
+max-complexity = 15
 
 [tool.pyproject-fmt]
 column_width = 125
 indent = 2
 keep_full_version = true
 
+[tool.pyright]
+venv = ".venv"
+venvPath = "."
+
 [tool.coverage]
-source = [ "." ]
-
-[tool.coverage.run]
-branch = true
-command_line = "-m pytest -vs"
-include = [ "src/delete_branches/*" ]
-omit = [ "tests/*" ]
-
-[tool.coverage.report]
-fail_under = 80
-show_missing = false
-include = [ "src/delete_branches/*" ]
+run.source = [ "src/delete_branches" ]
+run.omit = [ "tests/*" ]
+run.branch = true
+report.fail_under = 80
+report.show_missing = false
 
 [tool.commitizen]
-name = "cz_conventional_commits"
-major_version_zero = false
-tag_format = "$version"
-update_changelog_on_bump = true
+name = "cz_customize"
+version_scheme = "pep440"
+version_provider = "pep621"
 version_files = [
   "src/delete_branches/__init__.py:__version__",
 ]
-version_provider = "pep621"
-version_scheme = "pep440"
+major_version_zero = false
+tag_format = "$version"
+update_changelog_on_bump = true
+pre_bump_hooks = [ "uv lock" ]
+#
+# BUMP SETTINGS (Required so "cz bump" knows how to increment versions)
+customize.bump_map = { "BREAKING CHANGE" = "MAJOR", feat = "MINOR", fix = "PATCH", bugfix = "PATCH", hotfix = "PATCH", perf = "PATCH", refactor = "PATCH", dep = "PATCH" }
+customize.bump_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|fix|bugfix|hotfix|perf|refactor|dep)"
+#
+# CHANGELOG SETTINGS (Your specific grouping logic)
+customize.change_type_map = { feat = "New Features", perf = "Change Features", refactor = "Change Features", fix = "Fixes", bugfix = "Fixes", hotfix = "Fixes", dep = "Maintenance", build = "Others", ci = "Others", docs = "Others", style = "Others", test = "Others" }
+customize.change_type_order = [ "BREAKING CHANGE", "New Features", "Change Features", "Fixes", "Maintenance", "Others" ]
+customize.changelog_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|perf|refactor|fix|bugfix|hotfix|dep|build|ci|docs|style|test)"
+#
+# MESSAGE TEMPLATE (How the wizard formats your final commit message)
+customize.message_template = "{{prefix}}{% if scope %}({{scope}}){% endif %}: {{subject}}\n\n{{body}}"
+customize.schema_pattern = "^(feat|perf|refactor|fix|bugfix|hotfix|dep|build|ci|docs|style|test|BREAKING[\\-\\ ]CHANGE)(?:\\((.*)\\))?!?: (.*)"
+
+# INTERACTIVE WIZARD QUESTIONS
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "prefix"
+message = "Select the type of change you are committing"
+choices = [
+  { value = "feat", name = "feat: A new feature" },
+  { value = "fix", name = "fix: A bug fix" },
+  { value = "build", name = "build: Build system changes" },
+  { value = "ci", name = "ci: CI configuration changes" },
+  { value = "docs", name = "docs: Documentation changes" },
+  { value = "style", name = "style: Formatting/code style changes" },
+  { value = "test", name = "test: Adding/fixing tests" },
+  { value = "perf", name = "perf: Performance improvements" },
+  { value = "refactor", name = "refactor: Code refactoring" },
+  { value = "dep", name = "dep: Dependency updates" }
+]
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "subject"
+message = "Write a short summary of the code changes:\n"
